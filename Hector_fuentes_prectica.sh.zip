@@ -1,0 +1,95 @@
+#1.- conectarme via bcli
+#2.- crear un abjeto
+#3.- verificar que este creado.
+
+#!/bin/ksh
+
+
+########################################################################################
+# Grupo : Automatizacion CIB
+# Autor : Hector Fuentes
+# Responsable : Gines Estrella Paton
+# Fecha : 16/10/2019
+# Objetivo :Crear un servidor via BLCLI en BladeLogic
+########################################################################################
+
+#Declaracion de Variables
+#Cargamos credenciales de bladelogic
+password_PATH2="/usr/local/pr/bladelogic/NSH/br/.bladelogic/.user/user_info.dat"
+PathNSH="/usr/local/pr/bladelogic/NSH/bin"
+
+#Valida si el pase de parametros es correcto ./jobs_blogic.sh  $SERVER
+
+MyServer="${1}"
+
+if [ "$1" != 0 ]
+then
+
+echo -e "***************************************************************************************\n"
+echo -e "The server must be added:\n"
+echo -e "$MyServer\n"
+else
+echo -e "The data entered is not correct \n"
+exit 1
+fi
+
+DATE="`date '+%y%m%d'`"
+LOG="/tmp/${MyServer}_${DATE}.log"
+
+echo -e "**************************************************************************************\n"
+echo -e "***************** Acquiring access credentials to BladeLogic *************************\n"
+
+           $PathNSH/blcred cred -acquire -profile BLAdmin -i ${password_PATH2}
+
+#Anadimos el servidor a la lista.
+  echo -e "***************************************************************************************\n"
+  echo -e "******************** Linking the server ${MyServer} the  Job ****************************\n"
+
+#Anadimos servidor al job antes de la ejecucion
+Result_Server="`$PathNSH/blcli -v BLAdmin Server addServer ${MyServer}`"
+#echo -e "$Result_Server\n" >> $LOG
+
+echo -e "The server was created successfully $Result_Server\n"
+
+echo -e "Applying ACL policies\n"
+
+#Anadimos servidor al job antes de la ejecucion
+applyAclPolicy="`$PathNSH/blcli -v BLAdmin Server applyAclPolicy $MyServer BBVA_SSOO_CIB`"
+
+echo -e "ACL policy associated with success $applyAclPolicy\n"
+
+
+
+
+**************************************+Salida***********************************************************
+
+./create_server.nsh 23.4.46.22
+***************************************************************************************
+
+The server must be added:
+
+23.4.46.22
+
+**************************************************************************************
+
+***************** Acquiring access credentials to BladeLogic *************************
+
+Authentication succeeded: acquired session credential
+***************************************************************************************
+
+******************** Linking the server 23.4.46.22 the  Job ****************************
+
+The server was created successfully 2241101
+
+Applying ACL policies
+
+ACL policy associated with success DBKey:SDeviceModelKeyImpl:2241101-14160641
+
+[root@lpbsa501 scripts]#
+
+
+
+$PathNSH/blcli -v BLAdmin Server getBulkServerPropertyValuesAndLogResults "/tmp/JobResult_${DATE}_${SERVER}.log"
+
+**********************Decomisionar el servers
+$PathNSH/blcli -v BLAdmin Server decommissionServer 23.4.46.22
